@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket Verlosung</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f0f0f0; min-height: 100vh; color: #1a1a1a; }
+
+  :root {
+    --primary: #7F77DD;
+    --primary-light: #EEEDFE;
+    --primary-dark: #3C3489;
+    --success: #1D9E75;
+    --success-light: #E1F5EE;
+    --danger: #E24B4A;
+    --danger-light: #FCEBEB;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --bg: #ffffff;
+    --bg2: #f8f8f8;
+    --border: rgba(0,0,0,0.12);
+    --radius: 12px;
+    --radius-md: 8px;
+  }
+
+  .app { max-width: 780px; margin: 0 auto; padding: 2rem 1rem; }
+
+  /* NAV */
+  .nav { display: flex; gap: 8px; margin-bottom: 2rem; background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .nav button { flex: 1; padding: 8px 12px; border: none; background: transparent; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; color: var(--text-muted); transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; }
+  .nav button.active { background: var(--primary); color: #fff; font-weight: 500; }
+  .nav button:hover:not(.active) { background: var(--bg2); color: var(--text); }
+
+  /* HERO */
+  .hero { background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 2.5rem 2rem; text-align: center; margin-bottom: 1.5rem; position: relative; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: var(--primary-light); border-radius: 50%; z-index: 0; }
+  .hero > * { position: relative; z-index: 1; }
+  .hero h1 { font-size: 28px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .hero .subtitle { font-size: 15px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .hero .date-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-light); color: var(--primary-dark); padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 500; margin-bottom: 1.5rem; }
+
+  /* COUNTER */
+  .counter-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .stat { background: #fff; border-radius: var(--radius-md); padding: 1rem; text-align: center; border: 0.5px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .stat .num { font-size: 28px; font-weight: 600; color: var(--primary); }
+  .stat .lbl { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .progress-wrap { background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+  .progress-track { height: 8px; background: #e8e8e8; border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width 0.4s; }
+  .full-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--amber-light); color: var(--amber); padding: 8px 16px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+  .closed-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--danger-light); color: var(--danger); padding: 8px 16px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+
+  /* FORM */
+  .form-card { background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 1.75rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .form-card h2 { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 0; }
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .field input, .field select { padding: 9px 12px; border: 1px solid #ddd; border-radius: var(--radius-md); background: var(--bg2); color: var(--text); font-size: 14px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+  .field input:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(127,119,221,0.15); }
+  .field input.err, .field select.err { border-color: var(--danger); }
+  .err-msg { font-size: 12px; color: var(--danger); margin-top: 2px; }
+  .checkbox-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; cursor: pointer; line-height: 1.5; }
+  .checkbox-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+  .btn-primary { width: 100%; padding: 11px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.45; cursor: default; }
+  .success-msg { background: var(--success-light); color: var(--success); border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; line-height: 1.5; }
+  .success-msg i { margin-top: 1px; font-size: 20px; flex-shrink: 0; }
+
+  /* LISTE */
+  .list-card { background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 1.75rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .list-card h2 { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .participant { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .participant:last-child { border-bottom: none; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--primary-dark); flex-shrink: 0; }
+  .p-info { flex: 1; min-width: 0; }
+  .p-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .p-email { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .p-tag { font-size: 11px; background: var(--primary-light); color: var(--primary-dark); padding: 2px 8px; border-radius: 99px; flex-shrink: 0; font-weight: 500; }
+  .winner-tag { background: var(--amber-light); color: var(--amber); }
+  .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 14px; }
+  .empty-state i { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.4; }
+
+  /* AUSLOSUNG */
+  .draw-card { background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 2rem; text-align: center; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .draw-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .draw-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .btn-draw { padding: 12px 32px; background: var(--amber); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-draw:hover { opacity: 0.85; }
+  .btn-draw:disabled { opacity: 0.4; cursor: default; }
+  .winners-list { margin-top: 1.5rem; text-align: left; }
+  .winners-list .winner-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); font-size: 14px; }
+  .winners-list .winner-item:last-child { border-bottom: none; }
+  .winners-list .w-num { width: 26px; height: 26px; background: var(--amber-light); color: var(--amber); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+
+  /* ADMIN */
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .admin-card { background: #fff; border-radius: var(--radius); border: 0.5px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 1rem; }
+  .admin-card h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 7px; }
+  .btn-sec { padding: 8px 14px; background: transparent; border: 1px solid #ddd; border-radius: var(--radius-md); font-size: 13px; color: var(--text); cursor: pointer; transition: background 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-sec:hover { background: var(--bg2); }
+  .btn-danger { border-color: var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger-light); }
+  .btn-success { border-color: var(--success); color: var(--success); }
+  .btn-success:hover { background: var(--success-light); }
+  .admin-field { margin-bottom: 10px; }
+  .admin-field label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 500; }
+  .admin-field input, .admin-field textarea { width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: var(--radius-md); background: var(--bg2); color: var(--text); font-size: 13px; outline: none; font-family: inherit; transition: border-color 0.15s; }
+  .admin-field input:focus, .admin-field textarea:focus { border-color: var(--primary); }
+  .admin-field textarea { resize: vertical; min-height: 70px; }
+  .save-btn { width: 100%; padding: 9px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; margin-top: 8px; transition: opacity 0.15s; }
+  .save-btn:hover { opacity: 0.88; }
+  .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--success); }
+  .dot-red { background: var(--danger); }
+  .dot-amber { background: var(--amber); }
+  .status-text { font-size: 13px; color: var(--text-muted); }
+  .toggle-btn { padding: 6px 14px; border: 1px solid #ddd; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; background: #fff; margin-left: auto; }
+  .toggle-btn:hover { background: var(--bg2); }
+
+  /* KONFETTI */
+  .konfetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+  .conf { position: absolute; width: 8px; height: 8px; border-radius: 2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--success); color: #fff; padding: 10px 22px; border-radius: var(--radius-md); font-size: 14px; z-index: 9999; box-shadow: 0 2px 12px rgba(0,0,0,0.15); transition: opacity 0.3s; white-space: nowrap; }
+
+  @media (max-width: 540px) {
+    .field-row { grid-template-columns: 1fr; }
+    .admin-grid { grid-template-columns: 1fr; }
+    .nav button span { display: none; }
+    .hero h1 { font-size: 22px; }
+    .app { padding: 1rem 0.75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const STORAGE_KEY = 'ticket_verlosung_v3';
+
+const defaultConfig = {
+  title: 'Sommerfest 2025',
+  subtitle: 'Gewinne eines von 3 exklusiven VIP-Tickets!',
+  date: '15. August 2025',
+  location: 'Stadtpark Leipzig',
+  maxSlots: 50,
+  ticketCount: 3,
+  isOpen: true,
+  adminPin: '1234',
+  memberships: ['JuLis Ortsverband A', 'JuLis Ortsverband B', 'JuLis Kreisverband'],
+};
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (d && d.config) return d;
+  } catch(e) {}
+  return { config: { ...defaultConfig }, participants: [], winners: [] };
+}
+function save(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+let state = load();
+let page = 'home';
+let adminUnlocked = false;
+let formState = { vorname: '', nachname: '', email: '', member: '', agreed: false };
+let formErrors = {};
+let formSuccess = false;
+let adminPin = '';
+let pinError = false;
+let configDraft = JSON.parse(JSON.stringify(state.config));
+
+function render() {
+  document.getElementById('app').innerHTML = buildHTML();
+  attachEvents();
+}
+
+function buildHTML() {
+  const count = state.participants.length;
+  return `
+    <nav class="nav">
+      <button class="${page==='home'?'active':''}" onclick="go('home')">
+        <i class="ti ti-ticket"></i><span>Anmeldung</span>
+      </button>
+      <button class="${page==='list'?'active':''}" onclick="go('list')">
+        <i class="ti ti-users"></i><span>Teilnehmer (${count})</span>
+      </button>
+      <button class="${page==='draw'?'active':''}" onclick="go('draw')">
+        <i class="ti ti-trophy"></i><span>Auslosung</span>
+      </button>
+      <button class="${page==='admin'?'active':''}" onclick="go('admin')">
+        <i class="ti ti-settings"></i><span>Admin</span>
+      </button>
+    </nav>
+    ${page === 'home'  ? buildHome()  : ''}
+    ${page === 'list'  ? buildList()  : ''}
+    ${page === 'draw'  ? buildDraw()  : ''}
+    ${page === 'admin' ? buildAdmin() : ''}
+  `;
+}
+
+/* ---- HOME ---- */
+function buildHome() {
+  const cfg = state.config;
+  const filled = state.participants.length;
+  const max = cfg.maxSlots;
+  const pct = Math.min(100, Math.round(filled / max * 100));
+  const isFull = filled >= max;
+  const isClosed = !cfg.isOpen;
+  return `
+    <div class="hero">
+      <div class="date-badge"><i class="ti ti-calendar-event"></i> ${esc(cfg.date)}${cfg.location ? ' · ' + esc(cfg.location) : ''}</div>
+      <h1>${esc(cfg.title)}</h1>
+      <p class="subtitle">${esc(cfg.subtitle)}</p>
+    </div>
+    <div class="counter-bar">
+      <div class="stat"><div class="num">${filled}</div><div class="lbl">Angemeldet</div></div>
+      <div class="stat"><div class="num">${Math.max(0, max - filled)}</div><div class="lbl">Freie Plätze</div></div>
+      <div class="stat"><div class="num">${cfg.ticketCount}</div><div class="lbl">Zu verlosen</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Anmeldestand</span><span>${filled} / ${max}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    ${isClosed ? `<div style="text-align:center;margin-bottom:1rem"><span class="closed-badge"><i class="ti ti-lock"></i> Anmeldung ist geschlossen</span></div>` : ''}
+    ${!isClosed && isFull ? `<div style="text-align:center;margin-bottom:1rem"><span class="full-badge"><i class="ti ti-alert-circle"></i> Alle Plätze sind belegt</span></div>` : ''}
+    ${!isClosed && !isFull ? buildForm() : ''}
+  `;
+}
+
+function buildForm() {
+  const e = formErrors;
+  const ms = state.config.memberships || [];
+  return `
+    <div class="form-card">
+      <h2><i class="ti ti-user-plus"></i> Jetzt für die Verlosung anmelden</h2>
+      <div class="field-row">
+        <div class="field">
+          <label for="f-vorname">Vorname</label>
+          <input id="f-vorname" type="text" placeholder="Max" value="${esc(formState.vorname)}" class="${e.vorname?'err':''}">
+          ${e.vorname ? `<span class="err-msg">${esc(e.vorname)}</span>` : ''}
+        </div>
+        <div class="field">
+          <label for="f-nachname">Nachname</label>
+          <input id="f-nachname" type="text" placeholder="Mustermann" value="${esc(formState.nachname)}" class="${e.nachname?'err':''}">
+          ${e.nachname ? `<span class="err-msg">${esc(e.nachname)}</span>` : ''}
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-email">E-Mail-Adresse</label>
+        <input id="f-email" type="email" placeholder="max@beispiel.de" value="${esc(formState.email)}" class="${e.email?'err':''}">
+        ${e.email ? `<span class="err-msg">${esc(e.email)}</span>` : ''}
+      </div>
+      <div class="field">
+        <label for="f-member">JuLis-Mitgliedschaft</label>
+        <select id="f-member" class="${e.member?'err':''}">
+          <option value="">— Bitte auswählen —</option>
+          ${ms.map(m => `<option value="${esc(m)}" ${formState.member===m?'selected':''}>${esc(m)}</option>`).join('')}
+        </select>
+        ${e.member ? `<span class="err-msg">${esc(e.member)}</span>` : ''}
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="f-agreed" ${formState.agreed?'checked':''}>
+        Ich stimme zu, dass meine Daten für die Durchführung der Verlosung gespeichert werden.
+      </label>
+      ${e.agreed ? `<span class="err-msg" style="display:block;margin:-8px 0 10px">${esc(e.agreed)}</span>` : ''}
+      <button class="btn-primary" id="submit-btn"><i class="ti ti-send"></i> Anmeldung abschicken</button>
+      ${formSuccess ? `
+        <div class="success-msg">
+          <i class="ti ti-circle-check"></i>
+          <div><strong>Erfolgreich angemeldet!</strong><br>Du bist jetzt im Lostopf – viel Glück! 🍀</div>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+/* ---- LISTE ---- */
+function buildList() {
+  const ps = state.participants;
+  const winnerIds = state.winners.map(w => w.id);
+  return `
+    <div class="list-card">
+      <h2><i class="ti ti-users"></i> Teilnehmerliste
+        <span style="font-size:13px;font-weight:400;color:var(--text-muted);margin-left:auto">${ps.length} ${ps.length===1?'Person':'Personen'}</span>
+      </h2>
+      ${ps.length === 0 ? `<div class="empty-state"><i class="ti ti-user-off"></i>Noch keine Anmeldungen vorhanden.</div>` : ''}
+      ${ps.map(p => `
+        <div class="participant">
+          <div class="avatar">${esc(p.vorname[0])}${esc(p.nachname[0])}</div>
+          <div class="p-info">
+            <div class="p-name">${esc(p.vorname)} ${esc(p.nachname)}</div>
+            <div class="p-email">${esc(p.email)} · ${esc(p.member)}</div>
+          </div>
+          ${winnerIds.includes(p.id)
+            ? `<span class="p-tag winner-tag">🏆 Gewinner</span>`
+            : `<span class="p-tag">#${p.num}</span>`}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ---- AUSLOSUNG ---- */
+function buildDraw() {
+  const ps = state.participants;
+  const ws = state.winners;
+  const notEnough = ps.length < 1;
+  const drawn = ws.length > 0;
+  return `
+    <div class="draw-card">
+      <h2><i class="ti ti-trophy" style="color:var(--amber)"></i> Auslosung</h2>
+      <p>Es werden <strong>${state.config.ticketCount}</strong> Gewinner zufällig aus <strong>${ps.length}</strong> Teilnehmern gezogen.</p>
+      ${notEnough ? `<div style="background:var(--danger-light);color:var(--danger);padding:10px 14px;border-radius:var(--radius-md);font-size:14px;margin-bottom:1rem;display:inline-block">
+        <i class="ti ti-info-circle"></i> Noch keine Teilnehmer angemeldet.
+      </div>` : ''}
+      <div>
+        <button class="btn-draw" id="draw-btn" ${notEnough?'disabled':''}>
+          <i class="ti ti-confetti"></i> ${drawn ? 'Neu auslosen' : 'Jetzt auslosen!'}
+        </button>
+      </div>
+      ${drawn ? `
+        <div class="winners-list">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;text-align:left;font-weight:500">Gezogene Gewinner</div>
+          ${ws.map((w, i) => `
+            <div class="winner-item">
+              <div class="w-num">${i+1}</div>
+              <div style="flex:1">
+                <strong>${esc(w.vorname)} ${esc(w.nachname)}</strong>
+                <div style="font-size:12px;color:var(--text-muted)">${esc(w.email)} · ${esc(w.member)}</div>
+              </div>
+              <i class="ti ti-star-filled" style="color:var(--amber);font-size:16px"></i>
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:1rem;border-top:0.5px solid var(--border);padding-top:1rem">
+          <button class="btn-sec btn-danger" id="reset-draw-btn">
+            <i class="ti ti-refresh"></i> Auslosung zurücksetzen
+          </button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+/* ---- ADMIN ---- */
+function buildAdmin() {
+  if (!adminUnlocked) return buildAdminLogin();
+  const cfg = configDraft;
+  return `
+    <div class="admin-card">
+      <h3><i class="ti ti-activity"></i> Status</h3>
+      <div class="status-row">
+        <div class="status-dot ${cfg.isOpen ? 'dot-green' : 'dot-red'}"></div>
+        <span class="status-text">Anmeldung: <strong>${cfg.isOpen ? 'Geöffnet' : 'Geschlossen'}</strong></span>
+        <button class="toggle-btn" id="toggle-open">${cfg.isOpen ? '🔒 Schließen' : '🔓 Öffnen'}</button>
+      </div>
+      <div class="status-row">
+        <div class="status-dot dot-amber"></div>
+        <span class="status-text">Teilnehmer: <strong>${state.participants.length} / ${cfg.maxSlots}</strong></span>
+      </div>
+      <div class="status-row">
+        <div class="status-dot ${state.winners.length > 0 ? 'dot-amber' : 'dot-red'}"></div>
+        <span class="status-text">Auslosung: <strong>${state.winners.length > 0 ? state.winners.length + ' Gewinner gezogen' : 'Noch nicht ausgelost'}</strong></span>
+      </div>
+    </div>
+    <div class="admin-grid">
+      <div class="admin-card">
+        <h3><i class="ti ti-pencil"></i> Event-Einstellungen</h3>
+        <div class="admin-field"><label>Event-Titel</label><input id="a-title" value="${esc(cfg.title)}"></div>
+        <div class="admin-field"><label>Untertitel / Beschreibung</label><textarea id="a-subtitle">${esc(cfg.subtitle)}</textarea></div>
+        <div class="admin-field"><label>Datum</label><input id="a-date" value="${esc(cfg.date)}"></div>
+        <div class="admin-field"><label>Veranstaltungsort</label><input id="a-location" value="${esc(cfg.location||'')}"></div>
+        <div class="admin-field"><label>Max. Anmeldungen</label><input id="a-max" type="number" min="1" value="${cfg.maxSlots}"></div>
+        <div class="admin-field"><label>Anzahl zu verlosender Tickets</label><input id="a-tickets" type="number" min="1" value="${cfg.ticketCount}"></div>
+        <button class="save-btn" id="save-config"><i class="ti ti-device-floppy"></i> Einstellungen speichern</button>
+      </div>
+      <div class="admin-card">
+        <h3><i class="ti ti-id-badge"></i> JuLis-Mitgliedschaften</h3>
+        <div class="admin-field">
+          <label>Optionen (eine pro Zeile)</label>
+          <textarea id="a-memberships" style="min-height:100px">${(cfg.memberships||[]).join('\n')}</textarea>
+        </div>
+        <button class="save-btn" id="save-members">Mitgliedschaften speichern</button>
+        <div style="margin-top:1.5rem;border-top:0.5px solid var(--border);padding-top:1rem">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:0.75rem"><i class="ti ti-lock"></i> Admin-PIN ändern</h3>
+          <div class="admin-field"><label>Neuer PIN-Code</label><input id="a-pin" type="password" placeholder="Neuen PIN eingeben"></div>
+          <button class="save-btn" id="save-pin" style="background:var(--primary-dark)">PIN speichern</button>
+        </div>
+      </div>
+    </div>
+    <div class="admin-card">
+      <h3><i class="ti ti-database"></i> Datenverwaltung</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-sec btn-success" id="export-btn"><i class="ti ti-download"></i> Teilnehmer als CSV exportieren</button>
+        <button class="btn-sec btn-danger" id="clear-btn"><i class="ti ti-trash"></i> Alle Teilnehmer löschen</button>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1rem">
+      <button class="btn-sec" onclick="adminUnlocked=false;render()"><i class="ti ti-logout"></i> Abmelden</button>
+    </div>
+  `;
+}
+
+function buildAdminLogin() {
+  return `
+    <div class="form-card" style="max-width:380px;margin:0 auto">
+      <h2><i class="ti ti-lock"></i> Admin-Zugang</h2>
+      <div class="field">
+        <label for="pin-input">PIN-Code</label>
+        <input id="pin-input" type="password" placeholder="••••" value="${esc(adminPin)}" autocomplete="off">
+        ${pinError ? `<span class="err-msg">Falscher PIN-Code</span>` : ''}
+      </div>
+      <button class="btn-primary" id="pin-btn"><i class="ti ti-login"></i> Einloggen</button>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:12px;text-align:center">Standard-PIN: 1234 (im Admin-Panel änderbar)</p>
+    </div>
+  `;
+}
+
+/* ---- HELPER ---- */
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ---- EVENTS ---- */
+function attachEvents() {
+  /* Home / Form */
+  if (page === 'home' && state.config.isOpen && state.participants.length < state.config.maxSlots) {
+    ['vorname','nachname','email'].forEach(k => {
+      const el = document.getElementById('f-'+k);
+      if (el) el.addEventListener('input', () => { formState[k] = el.value; });
+    });
+    const sel = document.getElementById('f-member');
+    if (sel) sel.addEventListener('change', () => { formState.member = sel.value; });
+    const cb = document.getElementById('f-agreed');
+    if (cb) cb.addEventListener('change', () => { formState.agreed = cb.checked; });
+    const sb = document.getElementById('submit-btn');
+    if (sb) sb.addEventListener('click', submitForm);
+  }
+
+  /* Draw */
+  if (page === 'draw') {
+    const db = document.getElementById('draw-btn');
+    if (db) db.addEventListener('click', doDraw);
+    const rb = document.getElementById('reset-draw-btn');
+    if (rb) rb.addEventListener('click', () => { if(confirm('Auslosung wirklich zurücksetzen?')) { state.winners = []; save(state); render(); } });
+  }
+
+  /* Admin */
+  if (page === 'admin') {
+    if (!adminUnlocked) {
+      const pi = document.getElementById('pin-input');
+      if (pi) {
+        pi.addEventListener('input', e => { adminPin = e.target.value; });
+        pi.addEventListener('keydown', e => { if(e.key==='Enter') checkPin(); });
+        pi.focus();
+      }
+      const pb = document.getElementById('pin-btn');
+      if (pb) pb.addEventListener('click', checkPin);
+    } else {
+      document.getElementById('toggle-open')?.addEventListener('click', () => {
+        configDraft.isOpen = !configDraft.isOpen;
+        state.config.isOpen = configDraft.isOpen;
+        save(state);
+        render();
+      });
+      document.getElementById('save-config')?.addEventListener('click', saveConfig);
+      document.getElementById('save-members')?.addEventListener('click', saveMembers);
+      document.getElementById('save-pin')?.addEventListener('click', savePin);
+      document.getElementById('export-btn')?.addEventListener('click', exportCSV);
+      document.getElementById('clear-btn')?.addEventListener('click', clearAll);
+      /* Live-sync draft */
+      const fields = { title:'a-title', subtitle:'a-subtitle', date:'a-date', location:'a-location' };
+      Object.entries(fields).forEach(([k,id]) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => { configDraft[k] = el.value; });
+      });
+      ['a-max','a-tickets'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => {
+          configDraft[id==='a-max'?'maxSlots':'ticketCount'] = parseInt(el.value)||1;
+        });
+      });
+    }
+  }
+}
+
+/* ---- ACTIONS ---- */
+function go(p) { page = p; formSuccess = false; formErrors = {}; render(); }
+
+function submitForm() {
+  const vn = (document.getElementById('f-vorname')?.value||'').trim();
+  const nn = (document.getElementById('f-nachname')?.value||'').trim();
+  const em = (document.getElementById('f-email')?.value||'').trim().toLowerCase();
+  const mb = document.getElementById('f-member')?.value||'';
+  const ag = document.getElementById('f-agreed')?.checked||false;
+
+  const errs = {};
+  if (!vn) errs.vorname = 'Vorname ist erforderlich.';
+  if (!nn) errs.nachname = 'Nachname ist erforderlich.';
+  if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) errs.email = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+  if (!mb) errs.member = 'Bitte eine JuLis-Mitgliedschaft auswählen.';
+  if (!ag) errs.agreed = 'Bitte der Datenspeicherung zustimmen.';
+  if (!errs.email && state.participants.some(p => p.email.toLowerCase() === em)) {
+    errs.email = 'Diese E-Mail-Adresse ist bereits angemeldet.';
+  }
+
+  formErrors = errs;
+  formState = { vorname: vn, nachname: nn, email: em, member: mb, agreed: ag };
+
+  if (Object.keys(errs).length > 0) { render(); return; }
+
+  state.participants.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2),
+    num: state.participants.length + 1,
+    vorname: vn, nachname: nn, email: em, member: mb,
+    ts: new Date().toISOString()
+  });
+  save(state);
+  formState = { vorname: '', nachname: '', email: '', member: '', agreed: false };
+  formErrors = {};
+  formSuccess = true;
+  render();
+}
+
+function doDraw() {
+  const ps = state.participants;
+  if (!ps.length) return;
+  const count = Math.min(state.config.ticketCount, ps.length);
+  const shuffled = [...ps].sort(() => Math.random() - 0.5);
+  state.winners = shuffled.slice(0, count);
+  save(state);
+  launchConfetti();
+  render();
+}
+
+function checkPin() {
+  const input = document.getElementById('pin-input')?.value || adminPin;
+  if (input === String(state.config.adminPin || '1234')) {
+    adminUnlocked = true; pinError = false;
+    configDraft = JSON.parse(JSON.stringify(state.config));
+    render();
+  } else {
+    pinError = true; render();
+  }
+}
+
+function saveConfig() {
+  state.config = { ...state.config, ...configDraft };
+  save(state);
+  toast('Einstellungen gespeichert ✓');
+  render();
+}
+
+function saveMembers() {
+  const txt = document.getElementById('a-memberships')?.value || '';
+  const list = txt.split('\n').map(s => s.trim()).filter(Boolean);
+  configDraft.memberships = list;
+  state.config.memberships = list;
+  save(state);
+  toast('Mitgliedschaften gespeichert ✓');
+}
+
+function savePin() {
+  const np = document.getElementById('a-pin')?.value || '';
+  if (!np) { toast('Bitte neuen PIN eingeben.'); return; }
+  state.config.adminPin = np;
+  configDraft.adminPin = np;
+  save(state);
+  toast('PIN erfolgreich geändert ✓');
+}
+
+function exportCSV() {
+  const rows = [['Nr','Vorname','Nachname','E-Mail','JuLis-Mitgliedschaft','Angemeldet am','Gewinner']];
+  const winnerIds = state.winners.map(w => w.id);
+  state.participants.forEach(p => rows.push([
+    p.num, p.vorname, p.nachname, p.email, p.member,
+    new Date(p.ts).toLocaleString('de-DE'),
+    winnerIds.includes(p.id) ? 'Ja' : 'Nein'
+  ]));
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'teilnehmer_verlosung.csv';
+  a.click();
+}
+
+function clearAll() {
+  if (confirm('Wirklich alle Teilnehmer und Gewinner unwiderruflich löschen?')) {
+    state.participants = []; state.winners = [];
+    save(state); render();
+  }
+}
+
+function launchConfetti() {
+  const wrap = document.createElement('div');
+  wrap.className = 'konfetti';
+  const colors = ['#7F77DD','#1D9E75','#EF9F27','#E24B4A','#5DCAA5','#F09595','#FAC775'];
+  for (let i = 0; i < 80; i++) {
+    const d = document.createElement('div');
+    d.className = 'conf';
+    d.style.left = Math.random() * 100 + '%';
+    d.style.top = '-10px';
+    d.style.background = colors[Math.floor(Math.random() * colors.length)];
+    d.style.animationDuration = (1.2 + Math.random() * 1.8) + 's';
+    d.style.animationDelay = (Math.random() * 0.6) + 's';
+    d.style.width = d.style.height = (6 + Math.random() * 6) + 'px';
+    wrap.appendChild(d);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 3500);
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+/* Init */
+render();
+</script>
+</body>
+</html>
