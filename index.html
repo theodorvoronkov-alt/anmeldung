@@ -197,16 +197,12 @@ function buildHTML() {
       <button class="${page==='list'?'active':''}" onclick="go('list')">
         <i class="ti ti-users"></i><span>Teilnehmer (${count})</span>
       </button>
-      <button class="${page==='draw'?'active':''}" onclick="go('draw')">
-        <i class="ti ti-trophy"></i><span>Auslosung</span>
-      </button>
       <button class="${page==='admin'?'active':''}" onclick="go('admin')">
         <i class="ti ti-settings"></i><span>Admin</span>
       </button>
     </nav>
     ${page === 'home'  ? buildHome()  : ''}
     ${page === 'list'  ? buildList()  : ''}
-    ${page === 'draw'  ? buildDraw()  : ''}
     ${page === 'admin' ? buildAdmin() : ''}
   `;
 }
@@ -375,6 +371,34 @@ function buildAdmin() {
         <span class="status-text">Auslosung: <strong>${state.winners.length > 0 ? state.winners.length + ' Gewinner gezogen' : 'Noch nicht ausgelost'}</strong></span>
       </div>
     </div>
+    <div class="admin-card">
+      <h3><i class="ti ti-trophy" style="color:var(--amber)"></i> Auslosung</h3>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:1rem">
+        Es werden <strong>${state.config.ticketCount}</strong> Gewinner zufällig aus <strong>${state.participants.length}</strong> Teilnehmern gezogen.
+      </p>
+      ${state.participants.length < 1 ? `<div style="background:var(--danger-light);color:var(--danger);padding:10px 14px;border-radius:var(--radius-md);font-size:13px;margin-bottom:1rem"><i class="ti ti-info-circle"></i> Noch keine Teilnehmer angemeldet.</div>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn-draw" id="draw-btn" ${state.participants.length < 1 ? 'disabled' : ''}>
+          <i class="ti ti-confetti"></i> ${state.winners.length > 0 ? 'Neu auslosen' : 'Jetzt auslosen!'}
+        </button>
+        ${state.winners.length > 0 ? `<button class="btn-sec btn-danger" id="reset-draw-btn"><i class="ti ti-refresh"></i> Zurücksetzen</button>` : ''}
+      </div>
+      ${state.winners.length > 0 ? `
+        <div class="winners-list" style="margin-top:1rem">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;font-weight:500">Gezogene Gewinner</div>
+          ${state.winners.map((w, i) => `
+            <div class="winner-item">
+              <div class="w-num">${i+1}</div>
+              <div style="flex:1">
+                <strong>${esc(w.vorname)} ${esc(w.nachname)}</strong>
+                <div style="font-size:12px;color:var(--text-muted)">${esc(w.email)} · ${esc(w.member)}</div>
+              </div>
+              <i class="ti ti-star-filled" style="color:var(--amber);font-size:16px"></i>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
     <div class="admin-grid">
       <div class="admin-card">
         <h3><i class="ti ti-pencil"></i> Event-Einstellungen</h3>
@@ -473,6 +497,10 @@ function attachEvents() {
       const pb = document.getElementById('pin-btn');
       if (pb) pb.addEventListener('click', checkPin);
     } else {
+      document.getElementById('draw-btn')?.addEventListener('click', doDraw);
+      document.getElementById('reset-draw-btn')?.addEventListener('click', () => {
+        if (confirm('Auslosung wirklich zurücksetzen?')) { state.winners = []; save(state); render(); }
+      });
       document.getElementById('toggle-open')?.addEventListener('click', () => {
         configDraft.isOpen = !configDraft.isOpen;
         state.config.isOpen = configDraft.isOpen;
